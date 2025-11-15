@@ -22,10 +22,10 @@
     <Routes />
     <script src="_framework/blazor.web.js"></script>
     <script>
-                // أضف هذا الكود في <script> tag في ملف index.html أو _Host.cshtml
+               
 
         window.downloadFile = function(fileName, base64String) {
-            // تحويل Base64 إلى Blob
+          
             const byteCharacters = atob(base64String);
             const byteNumbers = new Array(byteCharacters.length);
 
@@ -36,17 +36,17 @@
             const byteArray = new Uint8Array(byteNumbers);
             const blob = new Blob([byteArray], { type: 'application/pdf' });
 
-            // إنشاء رابط للتحميل
+           
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = fileName;
 
-            // تشغيل التحميل
+            
             document.body.appendChild(link);
             link.click();
 
-            // تنظيف
+            
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
         }
