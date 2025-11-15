@@ -1,0 +1,650 @@
+﻿@using BulidInvoiceApp.Services.Invoices
+@using BulidInvoiceApp.Services.Pdf
+@using BulidInvoiceApp.Services.Products
+@using BulidInvoiceApp.Services.Admin
+@using BulidInvoiceApp.Services.PDF
+@using BulidInvoiceApp.Models
+@using Microsoft.JSInterop
+@inject IInvoiceService InvoiceService
+@inject IProductServices ProductService
+@inject IadminSrevices AdminService
+@inject IPdfInvoiceService PdfService
+@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-invoice"></i>Invoice details</h3>
+                <button class="close-btn" @onclick="CloseModal" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            @if (invoice == null)
+            {
+                <div class="modal-body">
+                    <div class="loading">Loading...</div>
+                </div>
+            }
+            else
+            {
+                <div class="modal-body">
+                    <div class="invoice-header-info">
+                        <div class="info-row">
+                            <span class="label">Invoice number :</span>
+                            <span class="value">@invoice.Id.ToString().Substring(0, 8)</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">date :</span>
+                            <span class="value">@invoice.Date.ToString("yyyy-MM-dd")</span>
+                        </div>
+                    </div>
+
+                    <div class="customer-info">
+                        <h4><i class="fas fa-user"></i> Customer data</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">name :</span>
+                                <span class="value">@invoice.NameCustomer</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">phone nomber:</span>
+                                <span class="value">@invoice.PhoneNumber</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(invoice.AddressCustomer))
+                            {
+                                <div class="info-item">
+                                    <span class="label">address :</span>
+                                    <span class="value">@invoice.AddressCustomer</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="invoice-items">
+                        <h4><i class="fas fa-shopping-cart"></i> Products</h4>
+                        @if (invoiceProducts == null || !invoiceProducts.Any())
+                        {
+                            <p class="no-items">There are no products in this invoice.</p>
+                        }
+                        else
+                        {
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>product</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Sum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in invoiceProducts)
+                                    {
+                                        <tr>
+                                            <td>@item.ProductName</td>
+                                            <td>@item.Price.ToString("C")</td>
+                                            <td>@item.Quantity</td>
+                                            <td>@((item.Price * item.Quantity).ToString("C"))</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+
+                    <div class="invoice-summary">
+                        <div class="summary-row">
+                            <span class="label">Subtotal:</span>
+                            <span class="value">@GetSubtotal().ToString("C")</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="label">tax (@invoice.Tax%):</span>
+                            <span class="value">@GetTaxAmount().ToString("C")</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="label">Discount (@invoice.Discount%):</span>
+                            <span class="value">-@GetDiscountAmount().ToString("C")</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span class="label">Final total :</span>
+                            <span class="value">@GetTotal().ToString("C")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-print" @onclick="PrintInvoice" disabled="@isPrinting">
+                        @if (isPrinting)
+                        {
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Generating...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-print"></i>
+                            <span>Print PDF</span>
+                        }
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public Guid InvoiceId { get; set; }
+    [Parameter] public EventCallback OnModalClosed { get; set; }
+
+    private Invoice invoice;
+    private List<InvoiceProductInfo> invoiceProducts = new List<InvoiceProductInfo>();
+    private CompanyInfo companyInfo;
+    private bool isPrinting = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && InvoiceId != Guid.Empty)
+        {
+            await LoadInvoice();
+            await LoadCompanyInfo();
+        }
+    }
+
+    private async Task LoadInvoice()
+    {
+        try
+        {
+            invoice = await InvoiceService.GetById(InvoiceId);
+            await LoadInvoiceProducts();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading invoice: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading invoice: {ex.Message}");
+        }
+    }
+
+    private async Task LoadCompanyInfo()
+    {
+        try
+        {
+            companyInfo = await AdminService.GetCompanyInfoAsync();
+            if (companyInfo == null)
+            {
+                companyInfo = new CompanyInfo
+                    {
+                        Name = "Your Company Name",
+                        Address = "Company Address",
+                        Phone = "Phone Number",
+                        Email = "email@company.com"
+                    };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading company info: {ex.Message}");
+        }
+    }
+
+    private async Task LoadInvoiceProducts()
+    {
+        invoiceProducts.Clear();
+        foreach (var detail in invoice.Details)
+        {
+            try
+            {
+                var product = await ProductService.GetById(detail.ProductID);
+                invoiceProducts.Add(new InvoiceProductInfo
+                    {
+                        ProductName = product.Name,
+                        Price = (decimal)product.Price,
+                        Quantity = detail.Quantity
+                    });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading product: {ex.Message}");
+            }
+        }
+    }
+
+    private decimal GetSubtotal()
+    {
+        return invoiceProducts.Sum(p => p.Price * p.Quantity);
+    }
+
+    private decimal GetTaxAmount()
+    {
+        return GetSubtotal() * invoice.Tax / 100;
+    }
+
+    private decimal GetDiscountAmount()
+    {
+        return GetSubtotal() * invoice.Discount / 100;
+    }
+
+    private decimal GetTotal()
+    {
+        return GetSubtotal() + GetTaxAmount() - GetDiscountAmount();
+    }
+
+    private async Task PrintInvoice()
+    {
+        isPrinting = true;
+        StateHasChanged();
+
+        try
+        {
+
+            var pdfBytes = await PdfService.GenerateInvoicePdf(invoice,invoiceProducts, companyInfo);
+
+
+            var base64 = Convert.ToBase64String(pdfBytes);
+
+
+            var fileName = $"Invoice_{invoice.Id.ToString().Substring(0, 8)}_{DateTime.Now:yyyyMMdd}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+            invoice.Status = 1;
+            InvoiceService.Update(invoice);
+
+
+            await JSRuntime.InvokeVoidAsync("alert", "Invoice PDF generated successfully!");
+            
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating PDF: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error generating PDF: {ex.Message}");
+        }
+        finally
+        {
+            isPrinting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnModalClosed.InvokeAsync();
+    }
+
+}
+
+<style>
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(26, 66, 104, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        padding: 20px;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        max-width: 900px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid #e1e8f0;
+        position: relative;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 25px 30px;
+        border-bottom: 2px solid #e1e8f0;
+        background: linear-gradient(135deg, #1a4268, #123458);
+        border-radius: 16px 16px 0 0;
+        position: relative;
+    }
+
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #4a90e2, #1a4268, #123458);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+    .close-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 1.3rem;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .invoice-header-info {
+        background: linear-gradient(135deg, #f8fafc, #e3f2fd);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        border: 1px solid #e1e8f0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+    }
+
+    .customer-info,
+    .invoice-items,
+    .invoice-summary {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e1e8f0;
+    }
+
+        .customer-info h4,
+        .invoice-items h4 {
+            color: #1a4268;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+
+        .info-item:hover {
+            border-color: #4a90e2;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.1);
+        }
+
+    .label {
+        font-weight: 600;
+        color: #1a4268;
+        font-size: 0.95rem;
+    }
+
+    .value {
+        color: #2d3748;
+        font-weight: 500;
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+        .items-table th {
+            background: linear-gradient(135deg, #1a4268, #123458);
+            padding: 16px;
+            text-align: right;
+            font-weight: 600;
+            color: white;
+            font-size: 0.95rem;
+            border-bottom: 2px solid #4a90e2;
+            position: relative;
+        }
+
+            .items-table th:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 20%;
+                height: 60%;
+                width: 1px;
+                background: rgba(255,255,255,0.3);
+            }
+
+        .items-table td {
+            padding: 14px 16px;
+            text-align: right;
+            border-bottom: 1px solid #f0f4f8;
+            color: #2d3748;
+            font-weight: 500;
+            position: relative;
+        }
+
+            .items-table td:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 20%;
+                height: 60%;
+                width: 1px;
+                background: #e2e8f0;
+            }
+
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .items-table tbody tr:hover {
+            background-color: #e3f2fd;
+        }
+
+    .invoice-summary {
+        background: linear-gradient(135deg, #f8fafc, #e3f2fd);
+        padding: 20px;
+        border-radius: 12px;
+        border: 2px solid #e1e8f0;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #4a90e2;
+            margin-top: 15px;
+            padding-top: 18px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #1a4268;
+            background: linear-gradient(135deg, #1a4268, #123458);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+    .no-items {
+        text-align: center;
+        color: #718096;
+        padding: 40px;
+        background: white;
+        border-radius: 8px;
+        border: 2px dashed #e2e8f0;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        padding: 25px 30px;
+        border-top: 2px solid #e1e8f0;
+        background: #f8fafc;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .btn-print
+    {
+        padding: 14px 32px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        width: 180px;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .btn-print {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+    }
+
+        .btn-print:hover {
+            background: linear-gradient(135deg, #357abd, #4a90e2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.3);
+        }
+
+   
+
+       
+
+    .loading {
+        text-align: center;
+        padding: 60px;
+        color: #4a90e2;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    @@media (max-width: 768px) {
+        .modal-content {
+            max-height: 95vh;
+            margin: 10px;
+        }
+
+        .modal-header {
+            padding: 20px;
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+
+        
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .invoice-header-info {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-footer {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-print
+        {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .items-table {
+            font-size: 0.85rem;
+        }
+
+            .items-table th,
+            .items-table td {
+                padding: 12px 10px;
+            }
+    }
+
+    @@media (max-width: 480px) {
+        .modal-header h3 {
+            font-size: 1.3rem;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .btn-print {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            min-width: 140px;
+        }
+    }
+</style>
+
+

@@ -1,0 +1,193 @@
+﻿@using BulidInvoiceApp.Components.Layout
+@layout EmptyLayout
+@page "/login"
+
+@inject NavigationManager Navigation
+
+@using Blazored.LocalStorage
+@rendermode InteractiveServer
+@inject ILocalStorageService localStorage
+
+
+<div class="form-control">
+    <p class="title">Login</p>
+
+    <div class="input-field">
+        <input class="input" type="text" id="username" @bind="UserName" required />
+        <label class="label">Enter UserName</label>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessageUserName))
+        {
+            <div class="text-danger small">@ErrorMessageUserName</div>
+        }
+    </div>
+
+
+
+    <div class="input-field">
+        <input class="input" type="password" id="password" @bind="Password" required />
+        <label class="label">Enter Password</label>
+        @if (!string.IsNullOrWhiteSpace(ErrorMessagePassword))
+        {
+            <div class="text-danger small">@ErrorMessagePassword</div>
+        }
+    </div>
+
+    <a href="#">Forgot your password?</a>
+    <button class="submit-btn" @onclick="HandleLogin">Sign In</button>
+
+    @if (!string.IsNullOrWhiteSpace(LoginMessage))
+    {
+        <div style="margin-top:10px; color:@Color;">@LoginMessage</div>
+    }
+</div>
+
+@code {
+    private string UserName { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
+
+    private string LoginMessage { get; set; } = string.Empty;
+    private string ErrorMessageUserName { get; set; } = string.Empty;
+    private string ErrorMessagePassword { get; set; } = string.Empty;
+    private string Color { get; set; } = "red";
+
+  
+
+    private async Task HandleLogin()
+    {
+        ErrorMessageUserName = string.Empty;
+        ErrorMessagePassword = string.Empty;
+        LoginMessage = string.Empty;
+
+        bool hasError = false;
+
+        if (string.IsNullOrWhiteSpace(UserName))
+        {
+            ErrorMessageUserName = "⚠ The username cannot be left blank.";
+            hasError = true;
+        }
+
+        if (string.IsNullOrWhiteSpace(Password))
+        {
+            ErrorMessagePassword = "⚠ The password cannot be left blank..";
+            hasError = true;
+        }
+
+        if (hasError)
+        {
+            return;
+        }
+
+        if (UserName == "admin" && Password == "1234")
+        {
+
+            await localStorage.SetItemAsStringAsync("isLoggedIn", "true");
+
+            Navigation.NavigateTo("/");
+
+        }
+        else
+        {
+            LoginMessage = "Incorrect username or password ❌";
+            Color = "red";
+        }
+
+        UserName = string.Empty;
+        Password = string.Empty;
+    }
+}
+
+<style>
+    body {
+        background-color: #f5f5f5;
+    }
+
+    .form-control {
+        margin: 20px auto;
+        background-color: #f5f5f5;
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+        width: 400px;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        padding: 25px;
+        border-radius: 8px;
+    }
+
+    .title {
+        font-size: 28px;
+        color: #123458;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    .input-field {
+        position: relative;
+        width: 100%;
+    }
+
+    .input {
+        margin-top: 15px;
+        width: 100%;
+        outline: none;
+        border-radius: 8px;
+        height: 45px;
+        border: 1.5px solid #ecedec;
+        background: transparent;
+        padding-left: 10px;
+    }
+
+        .input:focus {
+            border: 1.5px solid #0a4cf5;
+        }
+
+    .input-field .label {
+        position: absolute;
+        top: 25px;
+        left: 15px;
+        color: #7a7a7a;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .input-field .input:focus ~ .label,
+    .input-field .input:valid ~ .label {
+        top: 5px;
+        left: 5px;
+        font-size: 12px;
+        color: #0a4cf5;
+        background-color: #f5f5f5;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .submit-btn {
+        margin-top: 30px;
+        height: 55px;
+        background: #123458;
+        border-radius: 11px;
+        border: 0;
+        outline: none;
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    a {
+        text-align: center;
+        color: #123458;
+        text-decoration: none;
+    }
+
+        a:hover {
+            color: #0a4cf5;
+        }
+
+    .submit-btn:hover {
+        background-color: #0f2f47;
+    }
+</style>

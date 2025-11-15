@@ -1,0 +1,277 @@
+/* _content/BulidInvoiceApp/Components/Layout/EmptyLayout.razor.rz.scp.css */
+.page[b-k8z1439fbw] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main[b-k8z1439fbw] {
+    flex: 1;
+}
+
+.sidebar[b-k8z1439fbw] {
+    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+}
+
+.top-row[b-k8z1439fbw] {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #d6d5d5;
+    justify-content: flex-end;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+}
+
+    .top-row[b-k8z1439fbw]  a, .top-row[b-k8z1439fbw]  .btn-link {
+        white-space: nowrap;
+        margin-left: 1.5rem;
+        text-decoration: none;
+    }
+
+        .top-row[b-k8z1439fbw]  a:hover, .top-row[b-k8z1439fbw]  .btn-link:hover {
+            text-decoration: underline;
+        }
+
+        .top-row[b-k8z1439fbw]  a:first-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+@media (max-width: 640.98px) {
+    .top-row[b-k8z1439fbw] {
+        justify-content: space-between;
+    }
+
+        .top-row[b-k8z1439fbw]  a, .top-row[b-k8z1439fbw]  .btn-link {
+            margin-left: 0;
+        }
+}
+
+@media (min-width: 641px) {
+    .page[b-k8z1439fbw] {
+        flex-direction: row;
+    }
+
+    .sidebar[b-k8z1439fbw] {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .top-row[b-k8z1439fbw] {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+        .top-row.auth[b-k8z1439fbw]  a:first-child {
+            flex: 1;
+            text-align: right;
+            width: 0;
+        }
+
+    .top-row[b-k8z1439fbw], article[b-k8z1439fbw] {
+        padding-left: 2rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+#blazor-error-ui[b-k8z1439fbw] {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss[b-k8z1439fbw] {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+/* _content/BulidInvoiceApp/Components/Layout/MainLayout.razor.rz.scp.css */
+
+.page[b-be8uw7llk7] {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+.sidebar[b-be8uw7llk7] {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 1000;
+    overflow-y: auto;
+    transition: width 0.3s ease;
+}
+
+
+main[b-be8uw7llk7] {
+    flex: 1;
+    margin-left: 280px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+
+
+.top-row[b-be8uw7llk7] {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #d6d5d5;
+    justify-content: flex-start;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+
+.content[b-be8uw7llk7] {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+
+.top-row[b-be8uw7llk7]  a,
+.top-row[b-be8uw7llk7]  .btn-link {
+    white-space: nowrap;
+    margin-left: 1.5rem;
+    text-decoration: none;
+}
+
+    .top-row[b-be8uw7llk7]  a:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+/* رسائل الخطأ */
+#blazor-error-ui[b-be8uw7llk7] {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 280px;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: calc(100% - 280px);
+    z-index: 1000;
+    transition: left 0.3s ease, width 0.3s ease;
+}
+
+    #blazor-error-ui .dismiss[b-be8uw7llk7] {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+
+@media (max-width: 768px) {
+    .sidebar[b-be8uw7llk7] {
+        width: 80px;
+    }
+
+    main[b-be8uw7llk7] {
+        margin-left: 80px;
+    }
+
+    #blazor-error-ui[b-be8uw7llk7] {
+        left: 80px;
+        width: calc(100% - 80px);
+    }
+
+
+    .top-row[b-be8uw7llk7] {
+        justify-content: space-between;
+    }
+
+        .top-row[b-be8uw7llk7]  a,
+        .top-row[b-be8uw7llk7]  .btn-link {
+            margin-left: 0.5rem;
+        }
+}
+
+
+@media (max-width: 640px) {
+    .sidebar[b-be8uw7llk7] {
+        width: 60px;
+    }
+
+    main[b-be8uw7llk7] {
+        margin-left: 60px;
+    }
+
+    #blazor-error-ui[b-be8uw7llk7] {
+        left: 60px;
+        width: calc(100% - 60px);
+    }
+
+    .top-row[b-be8uw7llk7] {
+        justify-content: space-between;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+        .top-row[b-be8uw7llk7]  a,
+        .top-row[b-be8uw7llk7]  .btn-link {
+            margin-left: 0;
+        }
+
+
+    .navbar-brand[b-be8uw7llk7] {
+        font-size: 0.9rem;
+    }
+
+        .navbar-brand i[b-be8uw7llk7] {
+            font-size: 0.8rem;
+        }
+}
+
+
+@media (max-width: 480px) {
+    .sidebar[b-be8uw7llk7] {
+        width: 50px;
+    }
+
+    main[b-be8uw7llk7] {
+        margin-left: 50px;
+    }
+
+    #blazor-error-ui[b-be8uw7llk7] {
+        left: 50px;
+        width: calc(100% - 50px);
+    }
+
+    .content[b-be8uw7llk7] {
+        padding: 0.5rem;
+    }
+}
+
+
+*[b-be8uw7llk7] {
+    box-sizing: border-box;
+}
+
+
+.sidebar[b-be8uw7llk7],
+main[b-be8uw7llk7],
+#blazor-error-ui[b-be8uw7llk7] {
+    will-change: transform;
+}
+/* _content/BulidInvoiceApp/Components/Layout/NavMenu.razor.rz.scp.css */

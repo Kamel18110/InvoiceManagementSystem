@@ -1,0 +1,26 @@
+﻿@page "/logout"
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+@inject ILocalStorageService localStorage
+@inject IJSRuntime JSRuntime
+
+
+@code {
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+
+			await localStorage.SetItemAsStringAsync("isLoggedIn", "false");
+			Navigation.NavigateTo("/login");
+
+		}
+		catch
+		{
+
+		}
+
+
+	}
+
+}

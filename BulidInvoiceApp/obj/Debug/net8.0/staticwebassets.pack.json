@@ -1,0 +1,45 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\DZ_NEXTECH\\source\\repos\\BulidInvoiceApp\\BulidInvoiceApp\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\BulidInvoiceApp.bundle.scp.css",
+      "PackagePath": "staticwebassets\\BulidInvoiceApp.o7nxmz9aqr.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\DZ_NEXTECH\\source\\repos\\BulidInvoiceApp\\BulidInvoiceApp\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\DZ_NEXTECH\\source\\repos\\BulidInvoiceApp\\BulidInvoiceApp\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\DZ_NEXTECH\\source\\repos\\BulidInvoiceApp\\BulidInvoiceApp\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\DZ_NEXTECH\\source\\repos\\BulidInvoiceApp\\BulidInvoiceApp\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BulidInvoiceApp.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BulidInvoiceApp.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.BulidInvoiceApp.props",
+      "PackagePath": "build\\BulidInvoiceApp.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.BulidInvoiceApp.props",
+      "PackagePath": "buildMultiTargeting\\BulidInvoiceApp.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.BulidInvoiceApp.props",
+      "PackagePath": "buildTransitive\\BulidInvoiceApp.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

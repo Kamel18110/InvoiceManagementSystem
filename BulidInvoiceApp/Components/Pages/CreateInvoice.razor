@@ -1,0 +1,684 @@
+﻿@page "/createinvoice"
+@using BulidInvoiceApp.Services.Invoices
+@using BulidInvoiceApp.Services.Products
+@using BulidInvoiceApp.Models
+@inject IInvoiceService InvoiceService
+@inject IProductServices ProductService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<div class="create-invoice-container">
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            @errorMessage
+        </div>
+    }
+    <div class="page-header">
+        <h2>Create a new invoice</h2>
+        <button class="back-btn" @onclick="GoBack">
+            <i class="fas fa-arrow-right"></i> Goback
+        </button>
+    </div>
+
+    <div class="invoice-content">
+       
+        <div class="customer-section">
+            <h3><i class="fas fa-user"></i> Customer Information </h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label> name Customer *</label>
+                    <input type="text" @bind="invoice.NameCustomer" class="form-input" placeholder="Enter customer name" />
+                </div>
+                <div class="form-group">
+                    <label> Phone Number *</label>
+                    <input type="text" @bind="invoice.PhoneNumber" class="form-input" placeholder="Enter phone Number" />
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" @bind="invoice.AddressCustomer" class="form-input" placeholder="Enter Address" />
+                </div>
+                <div class="form-group">
+                    <label>tax %</label>
+                    <input type="number" step="0.01" @bind="invoice.Tax" class="form-input" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label>Discount %</label>
+                    <input type="number" step="0.01" @bind="invoice.Discount" class="form-input" placeholder="0.00" />
+                </div>
+            </div>
+        </div>
+
+        <div class="products-section">
+            <h3><i class="fas fa-box"></i> Product Available</h3>
+            @if (products == null)
+            {
+                <div class="loading">Products are being loaded...</div>
+            }
+            else
+            {
+                <div class="products-grid">
+                    @foreach (var product in products)
+                    {
+                        <CardProductInvoice ProductId="@product.Id"
+                                            ProductName="@product.Name"
+                                            ProductPrice="@((decimal)product.Price)"
+                                            ProductImageUrl="@GetImageUrl(product.Image)"
+                                            OnAddToInvoice="@AddProductToInvoice" />
+                    }
+                </div>
+            }
+        </div>
+
+       
+        <div class="invoice-items-section">
+            <h3><i class="fas fa-shopping-cart"></i> Products on the invoice</h3>
+            @if (!invoiceDetails.Any())
+            {
+                <div class="empty-cart">
+                    <i class="fas fa-cart-plus"></i>
+                    <p>No products have been added yet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>product</th>
+                                <th>Price</th>
+                                <th>Quntity</th>
+                                <th>Sum</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detail in invoiceDetails)
+                            {
+                                var product = products?.FirstOrDefault(p => p.Id == detail.ProductID);
+                                if (product != null)
+                                {
+                                    <tr>
+                                        <td>@product.Name</td>
+                                        <td>@product.Price.ToString("C")</td>
+                                        <td>@detail.Quantity</td>
+                                        <td>@((product.Price * detail.Quantity).ToString("C"))</td>
+                                        <td>
+                                            <button class="btn-remove" @onclick="() => RemoveFromInvoice(detail.Id)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="subtotal-row">
+                                <td colspan="3">subtotal </td>
+                                <td colspan="2">@GetSubtotal().ToString("C")</td>
+                            </tr>
+                            <tr class="tax-row">
+                                <td colspan="3">tax (@invoice.Tax%)</td>
+                                <td colspan="2">@GetTaxAmount().ToString("C")</td>
+                            </tr>
+                            <tr class="discount-row">
+                                <td colspan="3">discount (@invoice.Discount%)</td>
+                                <td colspan="2">-@GetDiscountAmount().ToString("C")</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td colspan="3"><strong>Total </strong></td>
+                                <td colspan="2"><strong>@GetTotal().ToString("C")</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-save" @onclick="SaveInvoice" disabled="@(!CanSave())">
+                        <i class="fas fa-save"></i>Save
+                    </button>
+                    <button class="btn-cancel" @onclick="GoBack">
+                        <i class="fas fa-times"></i>cancel
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string errorMessage = "";
+    private Invoice invoice = new Invoice
+        {
+            Id = Guid.NewGuid(),
+            Date = DateTime.Now,
+            Tax = 0,
+            Discount = 0,
+           
+        };
+
+    private List<InvoiceDetail> invoiceDetails = new List<InvoiceDetail>();
+    private IEnumerable<Product> products;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            products = await ProductService.GetAll();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products: {ex.Message}");
+        }
+    }
+
+    private string GetImageUrl(byte[] imageData)
+    {
+        if (imageData == null || imageData.Length == 0)
+        {
+            return "images/default-product.png";
+        }
+        return $"data:image/png;base64,{Convert.ToBase64String(imageData)}";
+    }
+
+    private void AddProductToInvoice((Guid productId, int quantity) data)
+    {
+        var existingDetail = invoiceDetails.FirstOrDefault(d => d.ProductID == data.productId);
+        if (existingDetail != null)
+        {
+            existingDetail.Quantity += data.quantity;
+        }
+        else
+        {
+            invoiceDetails.Add(new InvoiceDetail
+                {
+                    Id = Guid.NewGuid(),
+                    InvoiceID = invoice.Id,
+                    ProductID = data.productId,
+                    Quantity = data.quantity
+                });
+        }
+        StateHasChanged();
+    }
+
+    private void RemoveFromInvoice(Guid detailId)
+    {
+        var detail = invoiceDetails.FirstOrDefault(d => d.Id == detailId);
+        if (detail != null)
+        {
+            invoiceDetails.Remove(detail);
+            StateHasChanged();
+        }
+    }
+
+    private decimal GetSubtotal()
+    {
+        decimal subtotal = 0;
+        foreach (var detail in invoiceDetails)
+        {
+            var product = products?.FirstOrDefault(p => p.Id == detail.ProductID);
+            if (product != null)
+            {
+                subtotal += (decimal)(product.Price * detail.Quantity);
+            }
+        }
+        return subtotal;
+    }
+
+    private decimal GetTaxAmount()
+    {
+        return GetSubtotal() * invoice.Tax / 100;
+    }
+
+    private decimal GetDiscountAmount()
+    {
+        return GetSubtotal() * invoice.Discount / 100;
+    }
+
+    private decimal GetTotal()
+    {
+        return GetSubtotal() + GetTaxAmount() - GetDiscountAmount();
+    }
+
+    private bool CanSave()
+    {
+        return !string.IsNullOrWhiteSpace(invoice.NameCustomer) &&
+               !string.IsNullOrWhiteSpace(invoice.PhoneNumber) &&
+               invoiceDetails.Any();
+    }
+
+    private async Task SaveInvoice()
+    {
+        try
+        {
+            errorMessage = "";
+
+
+            foreach (var detail in invoiceDetails)
+            {
+                Product product = await ProductService.GetById(detail.ProductID);
+
+                if (product == null)
+                {
+                    errorMessage = $"The product does not exist!";
+                    StateHasChanged();
+                    return;
+                }
+
+                if (detail.Quantity > product.Quantity)
+                {
+                    errorMessage = $"The quantity of the product is insufficient. {product.Name}!Available: {product.Quantity}، Required: {detail.Quantity}";
+                    StateHasChanged();
+                    return;
+                }
+            }
+
+
+            await InvoiceService.Create(invoice);
+
+          
+            foreach (var detail in invoiceDetails)
+            {
+                await InvoiceService.CreateInvoiceDetail(detail);
+
+                
+                Product product = await ProductService.GetById(detail.ProductID);
+                product.Quantity = product.Quantity - detail.Quantity;
+                await ProductService.Update(product);
+            }
+
+            Console.WriteLine("The invoice has been saved successfully.");
+            Navigation.NavigateTo("/invoices");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving invoice: {ex.Message}";
+            Console.WriteLine($"Error saving invoice: {ex.Message}");
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/invoices");
+    }
+}
+
+<style>
+    .create-invoice-container {
+        padding: 20px;
+        max-width: 1600px;
+        margin: 0 auto;
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(26, 66, 104, 0.1);
+        border: 1px solid #e1e8f0;
+    }
+
+        .page-header h2 {
+            font-size: 2.2rem;
+            color: #1a4268;
+            margin: 0;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1a4268, #123458);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+    .back-btn {
+        background: linear-gradient(135deg, #718096, #4a5568);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(113, 128, 150, 0.3);
+    }
+
+        .back-btn:hover {
+            background: linear-gradient(135deg, #4a5568, #718096);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(113, 128, 150, 0.4);
+        }
+
+    .invoice-content {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .customer-section,
+    .products-section,
+    .invoice-items-section {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(26, 66, 104, 0.1);
+        border: 1px solid #e1e8f0;
+    }
+
+        .customer-section h3,
+        .products-section h3,
+        .invoice-items-section h3 {
+            color: #1a4268;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+        .form-group label {
+            font-weight: 600;
+            color: #1a4268;
+            text-align: right;
+            font-size: 0.95rem;
+        }
+
+    .form-input {
+        padding: 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        text-align: right;
+        background: #f8fafc;
+    }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 60px;
+        color: #718096;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 2px dashed #e2e8f0;
+    }
+
+        .empty-cart i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #4a90e2;
+            opacity: 0.7;
+        }
+
+        .empty-cart p {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+    .table-responsive {
+        overflow-x: auto;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+    }
+
+        .invoice-table th {
+            background: linear-gradient(135deg, #1a4268, #123458);
+            padding: 16px;
+            text-align: right;
+            font-weight: 600;
+            color: white;
+            font-size: 0.95rem;
+            border-bottom: 2px solid #4a90e2;
+            position: relative;
+        }
+
+            .invoice-table th:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 20%;
+                height: 60%;
+                width: 1px;
+                background: rgba(255,255,255,0.3);
+            }
+
+        .invoice-table td {
+            padding: 14px 16px;
+            text-align: right;
+            border-bottom: 1px solid #f0f4f8;
+            color: #2d3748;
+            font-weight: 500;
+            position: relative;
+        }
+
+            .invoice-table td:not(:last-child)::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 20%;
+                height: 60%;
+                width: 1px;
+                background: #e2e8f0;
+            }
+
+        .invoice-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .invoice-table tbody tr:hover {
+            background-color: #e3f2fd;
+        }
+
+        .invoice-table tfoot tr {
+            font-weight: 600;
+            background: #f8fafc;
+        }
+
+            .invoice-table tfoot tr.total-row {
+                background: white !important;
+                color: #1a4268;
+                font-size: 1.1rem;
+                border-top: 3px solid #4a90e2;
+            }
+
+                .invoice-table tfoot tr.total-row td {
+                    color: #1a4268;
+                    font-weight: 700;
+                    border-bottom: none;
+                }
+
+                .invoice-table tfoot tr.total-row strong {
+                    color: #1a4268;
+                }
+
+    .btn-remove {
+        background: linear-gradient(135deg, #e53e3e, #c53030);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(229, 62, 62, 0.2);
+    }
+
+        .btn-remove:hover {
+            background: linear-gradient(135deg, #c53030, #e53e3e);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+        }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e2e8f0;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #4a90e2, #357abd);
+        color: white;
+        border: none;
+        padding: 14px 35px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    }
+
+        .btn-save:hover:not(:disabled) {
+            background: linear-gradient(135deg, #357abd, #4a90e2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .btn-save:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+    .btn-cancel {
+        background: linear-gradient(135deg, #718096, #4a5568);
+        color: white;
+        border: none;
+        padding: 14px 35px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(113, 128, 150, 0.3);
+    }
+
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #4a5568, #718096);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(113, 128, 150, 0.4);
+        }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #4a90e2;
+        font-weight: 500;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 2px dashed #e2e8f0;
+    }
+
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn-save,
+        .btn-cancel {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .back-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    .alert {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        border-left: 4px solid;
+    }
+
+    .alert-error {
+        background: #fed7d7;
+        color: #c53030;
+        border-left-color: #e53e3e;
+    }
+
+        .alert-error i {
+            color: #e53e3e;
+        }
+</style>
+

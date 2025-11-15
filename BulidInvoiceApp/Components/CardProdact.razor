@@ -1,0 +1,171 @@
+﻿<div class="product-card">
+    <div class="product-image-container">
+        <img class="product-image" src="@ProductImageUrl" alt="@ProductName" />
+      
+    </div>
+
+    <div class="product-info">
+        <h3 class="product-name">@ProductName</h3>
+        <div class="product-price">@ProductPrice.ToString("C")</div>
+    </div>
+
+    <div class="product-actions">
+       
+        <button @onclick="OnViewMore" class="action-btn view-btn" title="عرض التفاصيل">
+            <i class="fas fa-eye"></i>
+        </button>
+        <button @onclick="OnEdit" class="action-btn edit-btn" title="تعديل">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button @onclick="OnDelete" class="action-btn delete-btn" title="حذف">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string ProductImageUrl { get; set; }
+
+    [Parameter]
+    public string ProductName { get; set; }
+
+    [Parameter]
+    public decimal ProductPrice { get; set; }
+
+   
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback OnViewMore { get; set; }
+
+   
+}
+
+<style>
+    .product-card {
+        width: 280px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 15px;
+    }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 2px solid #3f51b5;
+        }
+
+    .product-image-container {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.05);
+    }
+
+    .product-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #4CAF50;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .product-info {
+        padding: 15px;
+        text-align: right;
+    }
+
+    .product-name {
+        margin: 0 0 8px 0;
+        color: #333;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .product-price {
+        color: #4CAF50;
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .product-actions {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .action-btn {
+        background: none;
+        border: none;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 16px;
+    }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+    .cart-btn {
+        color: #3f51b5;
+    }
+
+        .cart-btn:hover {
+            background-color: rgba(63, 81, 181, 0.1);
+        }
+
+    .view-btn {
+        color: #4842f5;
+    }
+
+        .view-btn:hover {
+            background-color: rgba(50, 105, 168, 0.1);
+        }
+
+    .edit-btn {
+        color: #FFC107;
+    }
+
+        .edit-btn:hover {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+
+    .delete-btn {
+        color: #F44336;
+    }
+
+        .delete-btn:hover {
+            background-color: rgba(244, 67, 54, 0.1);
+        }</style>

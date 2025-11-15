@@ -1,0 +1,388 @@
+﻿@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager Navigation
+
+
+<div class="modern-sidebar">
+    <div class="sidebar-header">
+        <div class="logo-container">
+            <div class="logo-circle">
+
+                <span class="material-icons-outlined logo-icon">admin_panel_settings</span>
+            </div>
+            <h3>Admin<span>Panel</span></h3>
+        </div>
+    </div>
+
+    <div class="sidebar-menu">
+        <NavLink class="sidebar-item" href="/" Match="NavLinkMatch.All">
+            <div class="item-content">
+                <span class="material-icons-outlined sidebar-icon">dashboard</span>
+                <span class="sidebar-text">Dashbord</span>
+            </div>
+            <div class="active-indicator"></div>
+        </NavLink>
+
+        <NavLink class="sidebar-item" href="/products">
+            <div class="item-content">
+                <span class="material-icons-outlined sidebar-icon">inventory_2</span>
+                <span class="sidebar-text">Products</span>
+            </div>
+            <div class="active-indicator"></div>
+        </NavLink>
+
+        <NavLink class="sidebar-item" href="/invoices">
+            <div class="item-content">
+                <span class="material-icons-outlined sidebar-icon">receipt</span>
+                <span class="sidebar-text">Invoices</span>
+            </div>
+            <div class="active-indicator"></div>
+        </NavLink>
+
+        <NavLink class="sidebar-item" href="/information">
+            <div class="item-content">
+                <span class="material-icons-outlined sidebar-icon">info</span>
+                <span class="sidebar-text">
+                    CompanyInfo
+                    
+                </span>
+            </div>
+            <div class="active-indicator"></div>
+        </NavLink>
+
+        <NavLink class="sidebar-item" href="/language">
+            <div class="item-content">
+                <span class="material-icons-outlined sidebar-icon">language</span>
+                <span class="sidebar-text">Language</span>
+            </div>
+            <div class="active-indicator"></div>
+        </NavLink>
+    </div>
+
+    <NavLink class="sidebar-footer" href="/logout">
+        <div class="sidebar-item logout">
+            <div class="item-content">
+                <span class="material-icons-outlined sidebar-icon">logout</span>
+                <span class="sidebar-text">Logout</span>
+            </div>
+        </div>
+    </NavLink>
+</div>
+
+<style>
+    .modern-sidebar {
+        --primary-color: #123458;
+        --secondary-color: #1a4268;
+        --accent-color: #4a90e2;
+        --text-color: #ffffff;
+        --hover-color: rgba(255, 255, 255, 0.08);
+        --active-color: rgba(255, 255, 255, 0.15);
+        --border-color: rgba(255, 255, 255, 0.1);
+        width: 280px;
+        height: 100vh;
+        background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+        color: var(--text-color) !important;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: fixed;
+        top: 0;
+        left: 0;
+        overflow-y: auto;
+    }
+
+    .sidebar-header {
+        padding: 15px 25px 15px;
+        border-bottom: 1px solid var(--border-color);
+        min-height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        width: 100%;
+        transition: justify-content 0.3s ease;
+    }
+
+    .logo-circle {
+        width: 40px;
+        height: 40px;
+        background: var(--accent-color);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+
+    .logo-icon {
+        font-size: 1.3rem;
+        color: white;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .sidebar-header h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: opacity 0.3s ease;
+    }
+
+        .sidebar-header h3 span {
+            font-weight: 300;
+            opacity: 0.8;
+        }
+
+    .sidebar-menu {
+        flex: 1;
+        padding: 20px 0;
+        overflow-y: auto;
+    }
+
+    .sidebar-footer {
+        padding: 16px 0;
+        text-decoration: none;
+        border-top: 1px solid var(--border-color);
+        margin-top: auto;
+    }
+
+    .sidebar-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        color: var(--text-color);
+        text-decoration: none;
+        cursor: pointer;
+        height: 52px;
+        margin: 6px 12px;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+
+    .item-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        transition: justify-content 0.3s ease;
+    }
+
+    .sidebar-item:hover {
+        background: var(--hover-color);
+        transform: translateX(2px);
+    }
+
+    .sidebar-item.active {
+        background: var(--active-color);
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+    }
+
+        .sidebar-item.active .active-indicator {
+            position: absolute;
+            right: 12px;
+            width: 4px;
+            height: 28px;
+            background: var(--accent-color);
+            border-radius: 2px;
+            animation: fadeIn 0.3s ease;
+        }
+
+    .sidebar-icon {
+        margin-right: 16px;
+        font-size: 1.4rem;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: margin-right 0.3s ease;
+    }
+
+    .sidebar-text {
+        font-size: 1rem;
+        font-weight: 500;
+        opacity: 0.95;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: opacity 0.3s ease;
+    }
+
+    .logout .sidebar-text {
+        color: #ff6b6b;
+    }
+
+    .logout .sidebar-icon {
+        color: #ff6b6b;
+    }
+
+    .logout:hover {
+        background: rgba(255, 107, 107, 0.1);
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+
+    @@media (max-width: 768px) {
+        .modern-sidebar {
+            width: 80px;
+        }
+
+        .sidebar-header {
+            padding: 15px 10px;
+        }
+
+        .logo-container {
+            justify-content: center;
+        }
+
+        .logo-circle {
+            margin: 0;
+        }
+
+        .logo-icon {
+            opacity: 1;
+        }
+
+        .sidebar-header h3 {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar-item {
+            padding: 0;
+            margin: 6px 8px;
+            justify-content: center;
+        }
+
+        .item-content {
+            justify-content: center;
+        }
+
+        .sidebar-icon {
+            margin-right: 0;
+        }
+
+        .sidebar-text {
+            opacity: 0;
+            width: 0;
+        }
+
+        .active-indicator {
+            display: none;
+        }
+
+        .sidebar-item {
+            position: relative;
+        }
+
+            .sidebar-item:hover::after {
+                content: attr(title);
+                position: absolute;
+                left: 100%;
+                top: 50%;
+                transform: translateY(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                z-index: 1001;
+                margin-left: 10px;
+            }
+    }
+
+    @@media (max-width: 640px) {
+        .modern-sidebar {
+            width: 60px;
+        }
+
+        .sidebar-item {
+            margin: 4px 6px;
+            height: 48px;
+        }
+
+        .logo-circle {
+            width: 35px;
+            height: 35px;
+        }
+
+        .sidebar-icon {
+            font-size: 1.2rem;
+            width: 24px;
+            height: 24px;
+        }
+    }
+
+   
+    @@media (max-width: 480px) {
+        .modern-sidebar {
+            width: 50px;
+        }
+
+        .sidebar-item {
+            margin: 3px 5px;
+            height: 44px;
+        }
+
+        .logo-circle {
+            width: 30px;
+            height: 30px;
+        }
+
+        .logo-icon {
+            font-size: 1rem;
+        }
+
+        .sidebar-icon {
+            font-size: 1.1rem;
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    
+    .sidebar-item:active {
+        transform: scale(0.98);
+    }
+
+   
+    .modern-sidebar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .modern-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .modern-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+    }
+
+        .modern-sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+</style>

@@ -1,0 +1,441 @@
+﻿@using BulidInvoiceApp.Services.Products
+@inject IProductServices ProductService
+
+@if (IsVisible)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="form-control" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <p class="title">Edit Product</p>
+                <button class="close-button" @onclick="CloseModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                @if (currentProduct == null)
+                {
+                    <div class="loading-modal">Loading...</div>
+                }
+                else
+                {
+                    <EditForm Model="@currentProduct" OnValidSubmit="@HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="input-field">
+                            <input class="input" id="name" @bind="currentProduct.Name" required />
+                            <label class="label">Product Name</label>
+                            <ValidationMessage For="@(() => currentProduct.Name)" />
+                        </div>
+
+                        <div class="input-field">
+                            <textarea class="input" id="description" @bind="currentProduct.Description" required></textarea>
+                            <label class="label">Description</label>
+                        </div>
+
+                        <div class="input-field">
+                            <input class="input" type="number" id="price" @bind="currentProduct.Price" required />
+                            <label class="label">Price</label>
+                            <ValidationMessage For="@(() => currentProduct.Price)" />
+                        </div>
+
+                        <div class="input-field">
+                            <input class="input" type="number" id="quantity" @bind="currentProduct.Quantity" required />
+                            <label class="label">Quantity</label>
+                            <ValidationMessage For="@(() => currentProduct.Quantity)" />
+                        </div>
+
+                        <div class="input-field">
+                            <label class="file-label">
+                                <span>Product Image</span>
+                                <InputFile id="image" OnChange="@HandleImageUpload" class="file-input" />
+                            </label>
+                            @if (!string.IsNullOrEmpty(imagePreview))
+                            {
+                                <img src="@imagePreview" class="image-preview" alt="Image Preview" />
+                            }
+                            else if (currentProduct.Image != null && currentProduct.Image.Length > 0)
+                            {
+                                <img src="@($"data:image/png;base64,{Convert.ToBase64String(currentProduct.Image)}")"
+                                     class="image-preview" alt="Current image" />
+                            }
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn">Update Product</button>
+                            <button type="button" class="cancel-btn" @onclick="CloseModal">Cancel</button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public Guid ProductId { get; set; }
+    [Parameter] public EventCallback OnProductUpdated { get; set; }
+    [Parameter] public EventCallback OnModalClosed { get; set; }
+
+    private Product? currentProduct;
+    private string imagePreview = string.Empty;
+    private byte[]? imageBytes;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && ProductId != Guid.Empty && currentProduct?.Id != ProductId)
+        {
+            await LoadProduct();
+        }
+        else if (!IsVisible)
+        {
+            ResetModal();
+        }
+    }
+
+    private async Task LoadProduct()
+    {
+        try
+        {
+            currentProduct = await ProductService.GetById(ProductId);
+            imagePreview = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading product: {ex.Message}");
+        }
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var format = "image/jpg";
+        var resizedImage = await file.RequestImageFileAsync(format, 300, 300);
+
+        using var stream = resizedImage.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+
+        imageBytes = memoryStream.ToArray();
+        imagePreview = $"data:{format};base64,{Convert.ToBase64String(imageBytes)}";
+        if (currentProduct != null)
+        {
+            currentProduct.Image = imageBytes;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (currentProduct != null)
+            {
+                await ProductService.Update(currentProduct);
+
+            
+                await OnProductUpdated.InvokeAsync();
+                await CloseModal();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating product: {ex.Message}");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        IsVisible = false;
+        await OnModalClosed.InvokeAsync();
+    }
+
+    private void ResetModal()
+    {
+        currentProduct = null;
+        imagePreview = string.Empty;
+        imageBytes = null;
+    }
+}
+
+<style>
+    body {
+        background-color: #f5f5f5;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s ease;
+        overflow-y: auto;
+        padding: 20px 0;
+    }
+
+    .form-control {
+        margin: auto;
+        background-color: #f5f5f5;
+        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+        width: 500px;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 25px 25px 15px 25px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #ecedec;
+        flex-shrink: 0;
+    }
+
+    .modal-body {
+        padding: 0 25px;
+        overflow-y: auto;
+        flex-grow: 1;
+        max-height: calc(90vh - 180px);
+    }
+
+    .loading-modal {
+        text-align: center;
+        padding: 50px;
+        color: #666;
+        font-size: 1.2rem;
+    }
+
+    .title {
+        font-size: 28px;
+        color: #123458;
+        font-weight: 800;
+        text-align: center;
+        margin: 0;
+    }
+
+    .close-button {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: #999;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+        .close-button:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+    .input-field {
+        position: relative;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .input {
+        margin-top: 15px;
+        width: 100%;
+        outline: none;
+        border-radius: 8px;
+        height: 45px;
+        border: 1.5px solid #ecedec;
+        background: transparent;
+        padding-left: 10px;
+        font-size: 16px;
+    }
+
+        .input:focus {
+            border: 1.5px solid #0a4cf5;
+        }
+
+    textarea.input {
+        height: 100px;
+        padding-top: 10px;
+        resize: vertical;
+    }
+
+    .input-field .label {
+        position: absolute;
+        top: 25px;
+        left: 15px;
+        color: #7a7a7a;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .input-field .input:focus ~ .label,
+    .input-field .input:valid ~ .label,
+    .input-field .input:not(:placeholder-shown) ~ .label {
+        top: 5px;
+        left: 5px;
+        font-size: 12px;
+        color: #0a4cf5;
+        background-color: #f5f5f5;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .file-label {
+        display: flex;
+        flex-direction: column;
+        margin-top: 15px;
+        color: #7a7a7a;
+    }
+
+    .file-input {
+        margin-top: 5px;
+    }
+
+    .image-preview {
+        max-width: 100%;
+        max-height: 200px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1.5px solid #ecedec;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        padding: 20px 25px 25px 25px;
+        background-color: #f5f5f5;
+        border-top: 1px solid #ecedec;
+        flex-shrink: 0;
+        margin-top: 0;
+    }
+
+    .submit-btn {
+        height: 55px;
+        background: #123458;
+        border-radius: 11px;
+        border: 0;
+        outline: none;
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: 48%;
+    }
+
+    .cancel-btn {
+        height: 55px;
+        background: #6c757d;
+        border-radius: 11px;
+        border: 0;
+        outline: none;
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        width: 48%;
+    }
+
+    .submit-btn:hover {
+        background-color: #0f2f47;
+    }
+
+    .cancel-btn:hover {
+        background-color: #5a6268;
+    }
+
+    .validation-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+    }
+
+    @@media (max-width: 600px) {
+        .form-control
+
+    {
+        width: 95%;
+        max-width: 95%;
+        margin: 10px auto;
+    }
+
+    .modal-overlay {
+        padding: 10px 0;
+    }
+
+    .modal-header {
+        padding: 20px 15px 15px 15px;
+    }
+
+    .modal-body {
+        padding: 0 15px;
+        max-height: calc(90vh - 160px);
+    }
+
+    .form-actions {
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .submit-btn, .cancel-btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+        .submit-btn:last-child, .cancel-btn:last-child {
+            margin-bottom: 0;
+        }
+
+    .title {
+        font-size: 24px;
+    }
+
+    }
+
+    .modal-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+</style>
